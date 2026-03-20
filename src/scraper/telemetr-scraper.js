@@ -9,7 +9,7 @@
  * - 活跃度指标
  */
 
-const axios = require('axios');
+const https = require('https');
 const cheerio = require('cheerio');
 const logger = require('../utils/logger');
 
@@ -211,23 +211,22 @@ class TelemetrScraper {
     }
 
     /**
-     * 带重试的请求
+     * 使用原生 https 请求
      */
     async fetchWithRetry(url, retries = 3) {
-        for (let i = 0; i < retries; i++) {
-            try {
-                return await axios.get(url, {
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-                    },
-                    timeout: 10000
+        return new Promise((resolve, reject) => {
+            const attempt = (n) => {
+                https.get(url, { timeout: 10000 }, (res) => {
+                    let data = '';
+                    res.on('data', chunk => data += chunk);
+                    res.on('end', () => resolve({ data }));
+                }).on('error', (err) => {
+                    if (n <= 1) reject(err);
+                    else setTimeout(() => attempt(n - 1), 3000);
                 });
-            } catch (error) {
-                if (i === retries - 1) throw error;
-                logger.warn(`[Telemetr] Retry ${i + 1}/${retries} for ${url}`);
-                await this.sleep(3000);
-            }
-        }
+            };
+            attempt(retries);
+        });
     }
 
     /**
