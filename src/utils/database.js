@@ -1,10 +1,10 @@
 /**
  * ============================================================
- * 数据库工具 - MongoDB 封装
+ * 数据库工具 - MongoDB 原生驱动
  * ============================================================
  */
 
-const { MongoClient } = require('mongodb');
+const { MongoClient, ObjectId } = require('mongodb');
 const logger = require('./logger');
 
 class Database {
@@ -33,9 +33,6 @@ class Database {
         }
     }
 
-    /**
-     * 插入文档
-     */
     async insert(collection, doc) {
         try {
             const result = await this.db.collection(collection).insertOne(doc);
@@ -46,9 +43,6 @@ class Database {
         }
     }
 
-    /**
-     * 查找一个
-     */
     async findOne(collection, query) {
         try {
             return await this.db.collection(collection).findOne(query);
@@ -58,9 +52,6 @@ class Database {
         }
     }
 
-    /**
-     * 查找多个
-     */
     async findAll(collection, query = {}) {
         try {
             return await this.db.collection(collection).find(query).toArray();
@@ -70,9 +61,6 @@ class Database {
         }
     }
 
-    /**
-     * 统计数量
-     */
     async count(collection, query = {}) {
         try {
             return await this.db.collection(collection).countDocuments(query);
@@ -82,13 +70,10 @@ class Database {
         }
     }
 
-    /**
-     * 更新文档
-     */
     async update(collection, id, update) {
         try {
             const result = await this.db.collection(collection).updateOne(
-                { _id: id },
+                { _id: new ObjectId(id) },
                 { $set: update }
             );
             return result.modifiedCount;
@@ -98,9 +83,6 @@ class Database {
         }
     }
 
-    /**
-     * 删除文档
-     */
     async deleteOne(collection, query) {
         try {
             const result = await this.db.collection(collection).deleteOne(query);
@@ -111,9 +93,6 @@ class Database {
         }
     }
 
-    /**
-     * 获取所有集合名称
-     */
     async getCollections() {
         try {
             const collections = await this.db.listCollections().toArray();
