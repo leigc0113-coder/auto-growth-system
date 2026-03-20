@@ -19,7 +19,8 @@ class Database {
             this.client = new MongoClient(this.uri);
             await this.client.connect();
             this.db = this.client.db();
-            logger.info('[Database] Connected to MongoDB');
+            logger.info('[Database] Connected');
+            return true;
         } catch (error) {
             logger.error('[Database] Connection failed:', error);
             throw error;
@@ -34,73 +35,20 @@ class Database {
     }
 
     async insert(collection, doc) {
-        try {
-            const result = await this.db.collection(collection).insertOne(doc);
-            return result.insertedId;
-        } catch (error) {
-            logger.error(`[Database] Insert failed:`, error);
-            throw error;
-        }
+        const result = await this.db.collection(collection).insertOne(doc);
+        return result.insertedId;
     }
 
     async findOne(collection, query) {
-        try {
-            return await this.db.collection(collection).findOne(query);
-        } catch (error) {
-            logger.error(`[Database] FindOne failed:`, error);
-            return null;
-        }
+        return await this.db.collection(collection).findOne(query);
     }
 
     async findAll(collection, query = {}) {
-        try {
-            return await this.db.collection(collection).find(query).toArray();
-        } catch (error) {
-            logger.error(`[Database] FindAll failed:`, error);
-            return [];
-        }
+        return await this.db.collection(collection).find(query).toArray();
     }
 
     async count(collection, query = {}) {
-        try {
-            return await this.db.collection(collection).countDocuments(query);
-        } catch (error) {
-            logger.error(`[Database] Count failed:`, error);
-            return 0;
-        }
-    }
-
-    async update(collection, id, update) {
-        try {
-            const result = await this.db.collection(collection).updateOne(
-                { _id: new ObjectId(id) },
-                { $set: update }
-            );
-            return result.modifiedCount;
-        } catch (error) {
-            logger.error(`[Database] Update failed:`, error);
-            throw error;
-        }
-    }
-
-    async deleteOne(collection, query) {
-        try {
-            const result = await this.db.collection(collection).deleteOne(query);
-            return result.deletedCount;
-        } catch (error) {
-            logger.error(`[Database] Delete failed:`, error);
-            throw error;
-        }
-    }
-
-    async getCollections() {
-        try {
-            const collections = await this.db.listCollections().toArray();
-            return collections.map(c => c.name);
-        } catch (error) {
-            logger.error(`[Database] ListCollections failed:`, error);
-            return [];
-        }
+        return await this.db.collection(collection).countDocuments(query);
     }
 }
 
