@@ -1,0 +1,40 @@
+{
+  "name": "auto-growth-system",
+  "version": "1.0.0",
+  "description": "全自动增长系统 - 多平台并行获取新用户",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node src/index.js",
+    "scraper": "node src/scraper/index.js",
+    "outreach": "node src/outreach/index.js",
+    "analytics": "node src/analytics/index.js",
+    "test": "node test/test.js",
+    "setup": "node scripts/setup.js"
+  },
+  "keywords": [
+    "telegram",
+    "growth",
+    "marketing",
+    "automation",
+    "reddit",
+    "scraping"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^1.6.0",
+    "cheerio": "^1.0.0-rc.12",
+    "dotenv": "^16.4.0",
+    "mongoose": "^8.0.0",
+    "node-cron": "^3.0.0",
+    "node-telegram-bot-api": "^0.64.0",
+    "puppeteer": "^21.0.0",
+    "winston": "^3.11.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
