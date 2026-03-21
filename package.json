@@ -26,6 +26,7 @@
     "dotenv": "16.3.1",
     "mongodb": "5.9.1",
     "node-cron": "3.0.3",
+    "node-telegram-bot-api": "0.64.0",
     "puppeteer": "19.11.1",
     "puppeteer-extra": "3.3.6",
     "puppeteer-extra-plugin-stealth": "2.11.2",
