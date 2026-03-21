@@ -77,50 +77,84 @@ class StealthScraper {
                 timeout: 60000
             });
 
-            // 模拟真人行为：随机滚动
-            await this.humanLikeScroll(page);
-
-            // 等待内容加载
+            // 等待页面完全加载（Next.js 动态渲染）
+            logger.info('[StealthScraper] Waiting for content to load...');
+            await page.waitForTimeout(10000);  // 等待 10 秒让 JS 执行
+            
+            // 多次滚动触发懒加载
+            for (let i = 0; i < 5; i++) {
+                await page.evaluate(() => {
+                    window.scrollBy(0, 800);
+                });
+                await page.waitForTimeout(2000);
+            }
+            
+            // 再等待内容加载
             await page.waitForTimeout(5000);
 
-            // 提取数据
-            const html = await page.content();
-            const $ = cheerio.load(html);
-
-            // 尝试多种选择器
-            const selectors = [
-                '.channel-card',
-                '.channel-item',
-                '.list-item',
-                '.channel-row',
-                'a[href*="/channels/"]'
-            ];
-
-            let results = [];
-            for (const selector of selectors) {
-                $(selector).each((i, el) => {
-                    const name = $(el).find('.channel-name, h3, .title, .name').first().text().trim();
-                    const username = $(el).find('.channel-username, .username, .handle').first().text().trim();
-                    const subscribers = $(el).find('.subscribers-count, .stats, .members').first().text().trim();
-                    const link = $(el).attr('href') || $(el).find('a').first().attr('href');
-
-                    if (name || username) {
-                        results.push({
+            // 使用 Puppeteer 直接提取数据（更可靠）
+            const channels = await page.evaluate(() => {
+                const data = [];
+                
+                // 尝试多种可能的选择器
+                const items = document.querySelectorAll([
+                    '[class*="channel"]',
+                    '[class*="item"]',
+                    '[class*="card"]',
+                    'a[href*="/channels/"]'
+                ].join(', '));
+                
+                items.forEach(el => {
+                    // 查找链接
+                    const linkEl = el.tagName === 'A' ? el : el.querySelector('a[href*="/channels/"]');
+                    const href = linkEl?.getAttribute('href') || '';
+                    
+                    // 提取用户名（从链接 /channels/@username）
+                    const usernameMatch = href.match(/\/channels\/@?([^\/]+)/);
+                    const username = usernameMatch ? usernameMatch[1] : '';
+                    
+                    // 查找名称
+                    const nameEl = el.querySelector('h1, h2, h3, h4, [class*="title"], [class*="name"]');
+                    const name = nameEl?.textContent?.trim() || '';
+                    
+                    // 查找订阅数
+                    const statsEl = el.querySelector('[class*="subscribers"], [class*="members"], [class*="stats"]');
+                    const subscribers = statsEl?.textContent?.trim() || '';
+                    
+                    if (username || name) {
+                        data.push({
                             name,
-                            username: username?.replace('@', '') || '',
-                            subscribers: this.parseSubscribers(subscribers),
-                            link: link ? (link.startsWith('http') ? link : `https://telemetr.io${link}`) : '',
-                            source: 'telemetr',
-                            keyword: 'channels-list',
-                            scrapedAt: new Date()
+                            username: username.replace('@', ''),
+                            subscribers,
+                            link: href.startsWith('http') ? href : `https://telemetr.io${href}`
                         });
                     }
                 });
                 
-                if (results.length > 0) break;
-            }
+                return data;
+            });
+
+            // 去重
+            const seen = new Set();
+            channels.forEach(ch => {
+                if (ch.username && !seen.has(ch.username)) {
+                    seen.add(ch.username);
+                    results.push({
+                        ...ch,
+                        source: 'telemetr',
+                        keyword: 'channels-list',
+                        scrapedAt: new Date()
+                    });
+                }
+            });
 
             logger.info(`[StealthScraper] Found ${results.length} channels on Telemetr`);
+            
+            // 截图保存用于调试
+            await page.screenshot({ 
+                path: '/opt/auto-growth-system/data/telemetr-screenshot.png',
+                fullPage: true 
+            });
 
         } catch (error) {
             logger.error('[StealthScraper] Error:', error.message);
