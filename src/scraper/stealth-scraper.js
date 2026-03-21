@@ -105,26 +105,42 @@ class StealthScraper {
                 ].join(', '));
                 
                 items.forEach(el => {
-                    // 查找链接
-                    const linkEl = el.tagName === 'A' ? el : el.querySelector('a[href*="/channels/"]');
-                    const href = linkEl?.getAttribute('href') || '';
+                    // 获取链接
+                    const href = el.getAttribute('href') || el.querySelector('a')?.getAttribute('href') || '';
+                    if (!href.includes('/channels/')) return;
                     
-                    // 提取用户名（从链接 /channels/@username）
-                    const usernameMatch = href.match(/\/channels\/@?([^\/]+)/);
+                    // 提取用户名
+                    const usernameMatch = href.match(/\/channels\/@?([^\/\s]+)/);
                     const username = usernameMatch ? usernameMatch[1] : '';
+                    if (!username) return;
                     
-                    // 查找名称
-                    const nameEl = el.querySelector('h1, h2, h3, h4, [class*="title"], [class*="name"]');
-                    const name = nameEl?.textContent?.trim() || '';
+                    // 获取名称（从元素文本或子元素）
+                    const container = el.closest('li, [class*="item"], [class*="row"]') || el;
+                    let name = '';
                     
-                    // 查找订阅数
-                    const statsEl = el.querySelector('[class*="subscribers"], [class*="members"], [class*="stats"]');
-                    const subscribers = statsEl?.textContent?.trim() || '';
+                    // 尝试多种方式获取名称
+                    const nameSelectors = ['h3', 'h2', '.title', '[class*="name"]', 'strong', 'b'];
+                    for (const sel of nameSelectors) {
+                        const nameEl = container.querySelector(sel);
+                        if (nameEl?.textContent?.trim()) {
+                            name = nameEl.textContent.trim();
+                            break;
+                        }
+                    }
+                    // 如果没有找到，使用元素本身文本
+                    if (!name) {
+                        name = el.textContent?.trim()?.split('\n')[0]?.substring(0, 50) || '';
+                    }
                     
-                    if (username || name) {
+                    // 获取订阅数
+                    const containerText = container.textContent || '';
+                    const subMatch = containerText.match(/(\d[\d.,]*\s*[KkMm]?)\s*(?:subscribers?|members?|subs?)/i);
+                    const subscribers = subMatch ? subMatch[1] : '';
+                    
+                    if (!data.find(c => c.username === username)) {
                         data.push({
-                            name,
-                            username: username.replace('@', ''),
+                            name: name.replace(/\s+/g, ' ').trim() || username,
+                            username,
                             subscribers,
                             link: href.startsWith('http') ? href : `https://telemetr.io${href}`
                         });
