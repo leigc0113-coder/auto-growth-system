@@ -4,6 +4,7 @@
  * ============================================================
  */
 
+require('dotenv').config();
 const https = require('https');
 const logger = require('../utils/logger');
 
