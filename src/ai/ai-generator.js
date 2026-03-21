@@ -186,9 +186,14 @@ Return ONLY the reply text.`
                 res.on('end', () => {
                     try {
                         const json = JSON.parse(data);
-                        resolve(json);
+                        // 检查是否有错误
+                        if (json.error) {
+                            reject(new Error(json.error.message || 'Kimi API error'));
+                        } else {
+                            resolve(json);
+                        }
                     } catch (e) {
-                        reject(new Error('Invalid JSON response'));
+                        reject(new Error('Invalid JSON response: ' + data.substring(0, 100)));
                     }
                 });
             });
