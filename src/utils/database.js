@@ -50,6 +50,14 @@ class Database {
     async count(collection, query = {}) {
         return await this.db.collection(collection).countDocuments(query);
     }
+
+    async update(collection, query, update) {
+        const result = await this.db.collection(collection).updateOne(
+            query,
+            { $set: update }
+        );
+        return result.modifiedCount;
+    }
 }
 
 module.exports = Database;
