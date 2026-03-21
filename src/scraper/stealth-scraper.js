@@ -28,16 +28,21 @@ class StealthScraper {
     async createBrowser() {
         logger.info('[StealthScraper] Launching browser with proxy...');
         
+        // 解析代理配置
+        const proxyUrl = new URL(this.proxyUrl);
+        const proxyHost = `${proxyUrl.protocol}//${proxyUrl.host}`;
+        const proxyUsername = proxyUrl.username;
+        const proxyPassword = proxyUrl.password;
+        
+        this.proxyAuth = { username: proxyUsername, password: proxyPassword };
+        
         return await puppeteer.launch({
-            headless: true,  // 生产环境用无头模式
+            headless: true,
             args: [
                 '--no-sandbox',
                 '--disable-setuid-sandbox',
-                `--proxy-server=${this.proxyUrl}`,
-                '--disable-web-security',
-                '--disable-features=IsolateOrigins,site-per-process',
-                '--window-size=1920,1080',
-                '--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                `--proxy-server=${proxyHost}`,
+                '--disable-web-security'
             ]
         });
     }
@@ -51,6 +56,11 @@ class StealthScraper {
         
         try {
             const page = await browser.newPage();
+            
+            // 设置代理认证
+            if (this.proxyAuth) {
+                await page.authenticate(this.proxyAuth);
+            }
             
             // 设置额外请求头
             await page.setExtraHTTPHeaders({
